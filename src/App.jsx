@@ -12,46 +12,68 @@ const initialState = {
     resultBox: ''
 }
 
+
+const addCurrent = (state, value) => {
+
+    const currentExpression = state.expression
+    const lastElement = currentExpression[currentExpression.length - 1]
+
+    //console.log(value)
+    //console.log(lastElement)
+
+    // si valeur est un chiffre, renvoyer le chiffre, sinon verifier si l'élément est correctement saisi
+    if (padNumbers.map(number => number === value).includes(true)) {
+        return {
+            ...state,
+            textBox: state.textBox + value
+        }
+
+    } else {
+        let newExpression
+        if (lastElement === '+' || lastElement === '-' || lastElement === '*' || lastElement === '/' || lastElement === '.') {
+            newExpression = [
+                ...currentExpression.slice(0, -1),
+                state.textBox,
+                value
+            ]
+        } else {
+            newExpression = [
+                ...currentExpression,
+                state.textBox,
+                value
+            ]
+        }
+
+        return {
+            ...state,
+            expression: newExpression,
+            textBox: initialState.textBox,
+        }
+    }
+}
+
+
 const reducer = (state, action) => {
     switch (action.type) {
 
         case 'add_number':
-            return {
-                ...state,
-                textBox: state.textBox + action.payload.value
-            }
-
+            return addCurrent(state, action.payload.value)
 
         case 'addition':
-            return {
-                ...state,
-                expression: [...state.expression, state.textBox, '+'],
-                textBox: initialState.textBox,
-            }
-
+            return addCurrent(state, '+')
+        
         case 'soustract':
-            return {
-                ...state,
-                expression: [...state.expression, state.textBox, '-'],
-                textBox: initialState.textBox,
-            }
-
+            return addCurrent(state, '-')
+        
         case 'multiply':
-            return {
-                ...state,
-                expression: [...state.expression, state.textBox, '*'],
-                textBox: initialState.textBox,
-            }
+            return addCurrent(state, '*')
         
         case 'divide':
-            return {
-                ...state,
-                expression: [...state.expression, state.textBox, '/'],
-                textBox: initialState.textBox,
-            }
+            return addCurrent(state, '/')
 
         case 'calculate':
             let expression = [...state.expression, state.textBox]
+            let errorMessage = ''
         
             // Priority multiply & divide
             for (let i = 1; i < expression.length; i += 2) {
@@ -81,14 +103,20 @@ const reducer = (state, action) => {
                     result -= operand
                 }
             }
-        
-            //result = expression.join('') + '=' + result
+
+            try {
+                if (!isFinite(result)) {
+                    throw new Error('Error')
+                }
+            } catch (error) {
+                errorMessage = error.message
+            }
         
             return {
                 ...state,
                 expression: initialState.textBox,
                 textBox: initialState.textBox,
-                resultBox: result
+                resultBox: errorMessage ? errorMessage : result
             }
 
         case "reset":
@@ -129,7 +157,7 @@ const App = () => {
     }
 
     return (
-        <>
+        <div className='calculator'>
             <TextBox text={state.textBox} />
             <TextBox text={state.resultBox} />
             <div>
@@ -145,7 +173,7 @@ const App = () => {
                 <Button name={'='} handleClick={calculate} />
                 
             </div>
-        </>
+        </div>
     )
 }
 
