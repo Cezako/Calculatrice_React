@@ -15,12 +15,6 @@ const initialState = {
 const reducer = (state, action) => {
     switch (action.type) {
 
-        case 'set_value':
-            return {
-                ...state,
-                [action.payload.name]: action.payload.value
-            }
-
         case 'add_number':
             return {
                 ...state,
@@ -48,28 +42,48 @@ const reducer = (state, action) => {
                 expression: [...state.expression, state.textBox, '*'],
                 textBox: initialState.textBox,
             }
+        
+        case 'divide':
+            return {
+                ...state,
+                expression: [...state.expression, state.textBox, '/'],
+                textBox: initialState.textBox,
+            }
 
         case 'calculate':
-            const expression = [...state.expression, state.textBox]
-            let result = parseFloat(expression[0])
-
+            let expression = [...state.expression, state.textBox]
+        
+            // Priority multiply & divide
             for (let i = 1; i < expression.length; i += 2) {
                 const operator = expression[i]
                 const operand = parseFloat(expression[i + 1])
-
-                if (operator === '+') {
-                    result += operand
-                } else if (operator === '-') {
-                    result -= operand
-                } else if (operator === '*') {
-                    result *= operand
+        
+                if (operator === '*') {
+                    expression[i - 1] *= operand
+                    expression.splice(i, 2)
+                    i -= 2
                 } else if (operator === '/') {
-                    result /= operand
+                    expression[i - 1] /= operand
+                    expression.splice(i, 2)
+                    i -= 2
                 }
             }
-            
-            result = expression.map(item => String(item)).join('') + '=' + result
-
+        
+            let result = parseFloat(expression[0])
+        
+            for (let i = 1; i < expression.length; i += 2) {
+                const operator = expression[i]
+                const operand = parseFloat(expression[i + 1])
+        
+                if (operator === '+') {
+                    result += operand;
+                } else if (operator === '-') {
+                    result -= operand
+                }
+            }
+        
+            //result = expression.join('') + '=' + result
+        
             return {
                 ...state,
                 expression: initialState.textBox,
@@ -106,6 +120,10 @@ const App = () => {
         dispatch({type: 'multiply'})
     }
 
+    const divide = () => {
+        dispatch({type: 'divide'})
+    }
+
     const calculate = () => {
         dispatch({type: 'calculate'})
     }
@@ -118,9 +136,11 @@ const App = () => {
                 {padNumbers.map(number => (
                     <Button key={number} name={number} handleClick={() => addNumber(number)}/>
                 ))}
+                <Button name={'.'} handleClick={() => addNumber('.')} />
                 <Button name={'+'} handleClick={addition} />
                 <Button name={'-'} handleClick={soustact} />
                 <Button name={'*'} handleClick={multiply} />
+                <Button name={'/'} handleClick={divide} />
                 <Button name={'reset'} handleClick={()=> dispatch({type: 'reset'})} />
                 <Button name={'='} handleClick={calculate} />
                 
